@@ -4,6 +4,8 @@ package com.study.querydsl;
 import com.querydsl.core.QueryResults;
 import com.querydsl.core.Tuple;
 import com.querydsl.core.types.dsl.CaseBuilder;
+import com.querydsl.core.types.dsl.Expressions;
+import com.querydsl.core.types.dsl.NumberExpression;
 import com.querydsl.jpa.JPAExpressions;
 import com.querydsl.jpa.impl.JPAQueryFactory;
 import com.study.querydsl.entity.Member;
@@ -418,6 +420,64 @@ public class QuerydslBasicTest {
                                 .when(member.age.between(21, 30)).then("21살 ~ 30살")
                                 .otherwise("기타")
                 )
+                .from(member)
+                .fetch();
+
+        for (String s : result) {
+            System.out.println("s = " + s);
+        }
+    }
+
+    /**
+     * order by 에서 case 문 함께 사용하기
+     */
+    @Test
+    public void orderByWithCase() {
+        NumberExpression<Integer> rankPath = new CaseBuilder()
+                .when(member.age.between(0, 20)).then(2)
+                .when(member.age.between(21, 30)).then(1)
+                .otherwise(3);
+
+        List<Tuple> result = queryFactory
+                .select(member.username, member.age, rankPath)
+                .from(member)
+                .orderBy(rankPath.desc())
+                .fetch();
+
+        for (Tuple tuple : result) {
+            String username = tuple.get(member.username);
+            Integer age = tuple.get(member.age);
+            Integer rank = tuple.get(rankPath);
+
+            System.out.println("username = " + username);
+            System.out.println("age = " + age);
+            System.out.println("rank = " + rank);
+        }
+    }
+
+    /**
+     * 상수
+     * 최적화가 가능한경우 SQL에 constant값을 넘기지 않는다.
+     */
+    @Test
+    public void constant() {
+        List<Tuple> tuples = queryFactory
+                .select(member.username, Expressions.constant("A"))
+                .from(member)
+                .fetch();
+
+        for (Tuple tuple : tuples) {
+            System.out.println("tuple = " + tuple);
+        }
+    }
+
+    /**
+     * 문자 더하기 concat
+     */
+    @Test
+    public void concat() {
+        List<String> result = queryFactory
+                .select(member.username.concat("_").concat(member.age.stringValue()))
                 .from(member)
                 .fetch();
 
