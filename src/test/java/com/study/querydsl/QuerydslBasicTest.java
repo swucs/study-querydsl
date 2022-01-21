@@ -24,6 +24,7 @@ import org.h2.engine.User;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.test.annotation.Commit;
 
 import javax.persistence.EntityManager;
 import javax.persistence.EntityManagerFactory;
@@ -667,6 +668,47 @@ public class QuerydslBasicTest {
 
     private BooleanExpression allEq(String usernameCond, Integer ageCond) {
         return usernameEq(usernameCond).and(ageEq(ageCond));
+    }
+
+    @Test
+    @Commit
+    public void bulkUpdate() {
+        queryFactory
+                .update(member)
+                .set(member.username, "비회원")
+                .where(member.age.lt(28))
+                .execute();
+
+        //주의점 : bulk연산 후에는 영속성 컨텍스트와 DB와의 상태가 일치하지 않는다.
+        //여기서 find메소르도 가져오는 경우 DB의 update한 내용이 영속성 컨텍스트에 반영되지 않는다. (Repeatable Read)
+        //bulk연산 후에는 flush, clear하여 초기화한다.
+        em.flush();
+        em.clear();
+
+        List<Member> result = queryFactory
+                .selectFrom(member)
+                .fetch();
+
+        for (Member member1 : result) {
+            System.out.println("member1 = " + member1);
+        }
+
+    }
+
+    @Test
+    public void bulkAdd() {
+        queryFactory
+                .update(member)
+                .set(member.age, member.age.add(1))
+                .execute();
+    }
+
+    @Test
+    public void bulkDelete() {
+        queryFactory
+                .delete(member)
+                .where(member.age.gt(18))
+                .execute();
     }
 
 }
