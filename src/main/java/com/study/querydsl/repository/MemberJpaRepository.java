@@ -1,6 +1,8 @@
 package com.study.querydsl.repository;
 
 import com.querydsl.core.BooleanBuilder;
+import com.querydsl.core.types.Predicate;
+import com.querydsl.core.types.dsl.BooleanExpression;
 import com.querydsl.jpa.impl.JPAQueryFactory;
 import com.study.querydsl.dto.MemberSearchCondition;
 import com.study.querydsl.dto.MemberTeamDto;
@@ -89,5 +91,53 @@ public class MemberJpaRepository {
                 .leftJoin(member.team, team)
                 .where(builder)
                 .fetch();
+    }
+
+    public List<MemberTeamDto> search(MemberSearchCondition condition) {
+
+        return queryFactory
+                .select(new QMemberTeamDto(
+                        member.id.as("memberId")
+                        , member.username
+                        , member.age
+                        , team.id.as("teamId")
+                        , team.name.as("teamName")
+                ))
+                .from(member)
+                .leftJoin(member.team, team)
+                .where(
+                        usernameEq(condition.getUsername())
+                        , tempNameEq(condition.getTeamName())
+                        , ageGeo(condition.getAgeGoe())
+                        , ageLeo(condition.getAgeLoe())
+                )
+                .fetch();
+    }
+
+    /**
+     * 아래와 같이 조합할 수 있다.
+     * @param ageLoe
+     * @param ageGoe
+     * @return
+     */
+    private BooleanExpression ageBetween(int ageLoe, int ageGoe) {
+        return ageLeo(ageLoe).and(ageGeo(ageGoe));
+    }
+
+
+    private BooleanExpression usernameEq(String username) {
+        return StringUtils.hasText(username) ? member.username.eq(username) : null;
+    }
+
+    private BooleanExpression tempNameEq(String teamName) {
+        return StringUtils.hasText(teamName) ? team.name.eq(teamName) : null;
+    }
+
+    private BooleanExpression ageGeo(Integer ageGoe) {
+        return ageGoe != null ? member.age.goe(ageGoe) : null;
+    }
+
+    private BooleanExpression ageLeo(Integer ageLoe) {
+        return ageLoe != null ? member.age.loe(ageLoe) : null;
     }
 }
