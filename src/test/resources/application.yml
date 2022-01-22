@@ -1,6 +1,6 @@
 spring:
   profiles:
-    active: local
+    active: test
   datasource:
     url: jdbc:h2:tcp://localhost/~/querydsl
     username: sa
@@ -20,5 +20,3 @@ logging.level:
   org.hibernate.SQL: debug   #logger로  SQL을 출력.
 #    org.hibernate.type: trace
 
-server:
-  port: 9090
